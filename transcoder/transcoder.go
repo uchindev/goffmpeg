@@ -19,11 +19,11 @@ import (
 
 // Transcoder Main struct
 type Transcoder struct {
-	stdErrPipe    io.ReadCloser
-	stdStdinPipe  io.WriteCloser
-	process       *exec.Cmd
-	mediafile     *models.Mediafile
-	configuration ffmpeg.Configuration
+	stdErrPipe         io.ReadCloser
+	stdStdinPipe       io.WriteCloser
+	process            *exec.Cmd
+	mediafile          *models.Mediafile
+	configuration      ffmpeg.Configuration
 	whiteListProtocols []string
 }
 
@@ -205,6 +205,36 @@ func (t *Transcoder) Initialize(inputPath string, outputPath string) error {
 
 	return nil
 
+}
+
+func (t *Transcoder) ReadMetadata(data []byte) (models.Metadata, error) {
+	cfg := t.configuration
+	var outb, errb bytes.Buffer
+	var metadata models.Metadata
+	var err error
+	buffer := bytes.Buffer{}
+	buffer.Write(data)
+
+	command := []string{"-i", "pipe:0", "-print_format", "json", "-show_format", "-show_streams", "-show_error"}
+
+	if t.whiteListProtocols != nil {
+		command = append([]string{"-protocol_whitelist", strings.Join(t.whiteListProtocols, ",")}, command...)
+	}
+
+	cmd := exec.Command(cfg.FfprobeBin, command...)
+	cmd.Stdin = &buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+
+	err = cmd.Run()
+	if err != nil {
+		return metadata, fmt.Errorf("error executing (%s) | error: %s | message: %s %s", command, err, outb.String(), errb.String())
+	}
+
+	if err = json.Unmarshal([]byte(outb.String()), &metadata); err != nil {
+		return metadata, err
+	}
+	return metadata, nil
 }
 
 // Run Starts the transcoding process
