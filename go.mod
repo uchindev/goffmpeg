@@ -1,4 +1,4 @@
-module github.com/uchindev/goffmpeg
+module github.com/xfrr/goffmpeg
 
 go 1.14
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/uchindev/goffmpeg/models"
+	"github.com/xfrr/goffmpeg/models"
 )
 
 func DurToSec(dur string) (sec float64) {
